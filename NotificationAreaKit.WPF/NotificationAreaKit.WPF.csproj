@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+		<UseWPF>true</UseWPF>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+		<!-- Library package metadata -->
+		<Title>Notification Area Kit (WPF)</Title>
+		<Description>A simple and robust library for adding multiple, highly-configurable icons and notifications to the Windows Notification Area in WPF applications.</Description>
+		<PackageTags>wpf;tray;notifyicon;notification;toast;windows</PackageTags>
+	</PropertyGroup>
+	<ItemGroup>
+	  <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Reference the platform-agnostic core library -->
+		<ProjectReference Include="..\NotificationAreaKit.Core\NotificationAreaKit.Core.csproj" />
+	</ItemGroup>
+</Project>

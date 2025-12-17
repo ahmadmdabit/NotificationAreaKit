@@ -1,0 +1,113 @@
+﻿<Window
+    x:Class="NotificationAreaKit.WPF.Playground.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="NotificationAreaKit Playground"
+    Width="800"
+    Height="450"
+    Closed="WindowClosed"
+    Closing="WindowClosing"
+    mc:Ignorable="d">
+
+    <Window.Resources>
+
+        <!--  A sample UserControl to demonstrate the hover feature  -->
+        <UserControl x:Key="SampleHoverContent" x:Shared="False">
+            <Border
+                Padding="10"
+                Background="#FF3E3E42"
+                BorderBrush="Gray"
+                BorderThickness="1"
+                CornerRadius="4">
+                <StackPanel>
+                    <TextBlock
+                        FontWeight="Bold"
+                        Foreground="White"
+                        Text="Hover Content" />
+                    <TextBlock
+                        Margin="0,5,0,0"
+                        Foreground="White"
+                        Text="This is a custom WPF UserControl." />
+                    <ProgressBar
+                        Height="5"
+                        Margin="0,10,0,0"
+                        IsIndeterminate="True" />
+                </StackPanel>
+            </Border>
+        </UserControl>
+
+    </Window.Resources>
+
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!--  Left Panel: Controls  -->
+        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+            <GroupBox Header="Icon Management">
+                <StackPanel>
+                    <Button
+                        Margin="5"
+                        Padding="5"
+                        Click="AddIcon_Click"
+                        Content="Add New Tray Icon" />
+                    <Button
+                        Margin="5"
+                        Padding="5"
+                        Click="RemoveIcon_Click"
+                        Content="Remove Last Tray Icon" />
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Margin="0,10,0,0" Header="Common Use Cases">
+                <StackPanel>
+                    <TextBlock
+                        Margin="5"
+                        Text="Left-Click an icon to show a notification."
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        Margin="5"
+                        Text="Right-Click an icon to show a context menu."
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        Margin="5"
+                        Text="Double-Click an icon to show/hide this window."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Margin="0,10,0,0" Header="Edge Cases &amp; Patterns">
+                <StackPanel>
+                    <CheckBox
+                        x:Name="HideOnCloseCheckBox"
+                        Margin="5"
+                        Content="Hide Window on Close (Tray Icon Pattern)"
+                        IsChecked="True" />
+                    <CheckBox
+                        x:Name="EnableHoverCheckBox"
+                        Margin="5"
+                        Content="Enable Hover Content"
+                        IsChecked="True" />
+                    <Button
+                        Margin="5"
+                        Padding="5"
+                        Click="ShowBalloon_Click"
+                        Content="Show Explicit Balloon (Win7 Style)" />
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+
+        <!--  Right Panel: Log Viewer  -->
+        <GroupBox Grid.Column="1" Header="Event Log">
+            <ListView
+                x:Name="LogListView"
+                BorderBrush="LightGray"
+                BorderThickness="1"
+                ItemsSource="{Binding LogMessages}" />
+        </GroupBox>
+    </Grid>
+</Window>

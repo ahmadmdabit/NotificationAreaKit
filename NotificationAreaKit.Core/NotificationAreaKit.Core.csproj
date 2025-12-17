@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<!-- Target .NET 9. Using a specific Windows version for WinRT API access. -->
+		<TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+		<!-- Library package metadata -->
+		<Title>Notification Area Kit (Core)</Title>
+		<Description>Core, platform-agnostic library for Windows Notification Area integration, including toast notifications and shortcut management.</Description>
+	</PropertyGroup>
+
+</Project>

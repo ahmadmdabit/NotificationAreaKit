@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<LangVersion>latest</LangVersion>
+		<UseWPF>true</UseWPF>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove="Resources\Images\Icons\email.ico" />
+	  <None Remove="Resources\Images\Icons\email.png" />
+	  <None Remove="Resources\Images\Icons\help.ico" />
+	  <None Remove="Resources\Images\Icons\help.png" />
+	  <None Remove="Resources\Images\Icons\notification.ico" />
+	  <None Remove="Resources\Images\Icons\notification.png" />
+	  <None Remove="Resources\Images\Icons\opened-folder.ico" />
+	  <None Remove="Resources\Images\Icons\opened-folder.png" />
+	  <None Remove="Resources\Images\Icons\profile.ico" />
+	  <None Remove="Resources\Images\Icons\profile.png" />
+	  <None Remove="Resources\Images\Icons\star.ico" />
+	  <None Remove="Resources\Images\Icons\star.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\NotificationAreaKit.WPF\NotificationAreaKit.WPF.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Resource Include="Resources\Images\Icons\email.ico" />
+	  <Resource Include="Resources\Images\Icons\email.png" />
+	  <Resource Include="Resources\Images\Icons\help.ico" />
+	  <Resource Include="Resources\Images\Icons\help.png" />
+	  <Resource Include="Resources\Images\Icons\notification.ico" />
+	  <Resource Include="Resources\Images\Icons\notification.png" />
+	  <Resource Include="Resources\Images\Icons\opened-folder.ico" />
+	  <Resource Include="Resources\Images\Icons\opened-folder.png" />
+	  <Resource Include="Resources\Images\Icons\profile.ico" />
+	  <Resource Include="Resources\Images\Icons\profile.png" />
+	  <Resource Include="Resources\Images\Icons\star.ico" />
+	  <Resource Include="Resources\Images\Icons\star.png" />
+	</ItemGroup>
+
+</Project>

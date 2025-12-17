@@ -1,1 +1,5 @@
-<Solution />
+<Solution>
+  <Project Path="NotificationAreaKit.Core/NotificationAreaKit.Core.csproj" />
+  <Project Path="NotificationAreaKit.WPF.Playground/NotificationAreaKit.WPF.Playground.csproj" />
+  <Project Path="NotificationAreaKit.WPF/NotificationAreaKit.WPF.csproj" />
+</Solution>

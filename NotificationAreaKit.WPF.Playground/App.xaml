@@ -1,0 +1,19 @@
+﻿<Application
+    x:Class="NotificationAreaKit.WPF.Playground.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:NotificationAreaKit.WPF.Playground"
+    StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <!--
+            This ContextMenu is defined as a shared resource.
+            Any tray icon can dynamically find and display it.
+            The commands are bound to properties on the MainWindow's DataContext.
+        -->
+        <ContextMenu x:Key="TrayContextMenu" x:Shared="False">
+            <MenuItem Command="{Binding ShowWindowCommand}" Header="Show Playground Window" />
+            <Separator />
+            <MenuItem Command="{Binding ExitCommand}" Header="Exit Application" />
+        </ContextMenu>
+    </Application.Resources>
+</Application>
