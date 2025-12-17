@@ -8,12 +8,13 @@ namespace NotificationAreaKit.Core.Interop;
 /// Uses LibraryImport for optimized, compile-time marshalling where possible.
 /// </summary>
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1305:Field names should not use Hungarian notation", Justification = "Win32 API conventions.")]
-internal static partial class NativeMethods
+internal static partial class SystemPrimitives
 {
     #region Shortcut/Property Store COM Interop
 
+    // IStructureLinkW is the 000214F9-0000-0000-C000-000000000046 IShellLinkW
     [ComImport, Guid("000214F9-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    internal interface IShellLinkW
+    internal interface IStructureLinkW
     {
         void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile, int cchMaxPath, IntPtr pfd, uint fFlags);
 
@@ -84,8 +85,9 @@ internal static partial class NativeMethods
         public ulong uhVal;
     }
 
+    // StructureLink is the 00021401-0000-0000-C000-000000000046 ShellLink
     [ComImport, Guid("00021401-0000-0000-C000-000000000046"), ClassInterface(ClassInterfaceType.None)]
-    internal class ShellLink
+    internal class StructureLink
     { }
 
     [LibraryImport("Ole32.dll", SetLastError = false)]

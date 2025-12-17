@@ -15,32 +15,35 @@ public sealed class TrayIconManager
 {
     // 1. THREAD-SAFE SINGLETON IMPLEMENTATION
     // Lazy<T> guarantees the instance is created only once in a thread-safe manner.
-    private static readonly Lazy<TrayIconManager> _lazyInstance = new(() => new TrayIconManager());
+    private static readonly Lazy<TrayIconManager> lazyInstance = new(() => new TrayIconManager());
 
     /// <summary>
     /// Gets the single, shared instance of the TrayIconManager for the application.
     /// </summary>
-    public static TrayIconManager Instance => _lazyInstance.Value;
+    public static TrayIconManager Instance => lazyInstance.Value;
 
     /// <summary>
     /// The handle to the hidden message window, required by consumers to get icon rectangles.
     /// </summary>
     public readonly IntPtr MessageWindowHandle;
 
-    private readonly HwndSource _messageWindow;
-    private readonly object _lock = new();
-    private readonly Dictionary<uint, NativeMethods.NOTIFYICONDATA> _icons = new();
-    private bool _disposed;
-    private uint _nextId = 1;
+    private readonly HwndSource messageWindow;
+    private readonly Lock locker = new();
+    private readonly Dictionary<uint, SystemPrimitives.NotifyIconData> icons = [];
+    private bool disposed;
+    private uint nextId = 1;
 
-    private readonly DispatcherTimer _singleClickTimer;
-    private uint _pendingSingleClickId;
-    private bool _handlingDoubleClick = false;
+    private readonly DispatcherTimer singleClickTimer;
+    private uint pendingSingleClickId;
+    private bool handlingDoubleClick = false;
 
     // Events - Dispatched to UI thread automatically
     public event Action<uint>? IconLeftClicked;
+
     public event Action<uint>? IconRightClicked;
+
     public event Action<uint>? IconDoubleClicked;
+
     public event Action<uint>? IconMouseMove;
 
     // 2. PRIVATE CONSTRUCTOR
@@ -56,14 +59,17 @@ public sealed class TrayIconManager
             Height = 0,
             ParentWindow = (IntPtr)(-3), // HWND_MESSAGE
         };
-        _messageWindow = new HwndSource(parameters);
-        MessageWindowHandle = _messageWindow.Handle;
-        _messageWindow.AddHook(WndProc);
+        messageWindow = new HwndSource(parameters);
+        MessageWindowHandle = messageWindow.Handle;
+        messageWindow.AddHook(WndProc);
 
         // Initialize the timer
-        _singleClickTimer = new DispatcherTimer { IsEnabled = false };
-        _singleClickTimer.Interval = TimeSpan.FromMilliseconds(NativeMethods.GetDoubleClickTime());
-        _singleClickTimer.Tick += OnSingleClickTimerTick;
+        singleClickTimer = new DispatcherTimer
+        {
+            IsEnabled = false,
+            Interval = TimeSpan.FromMilliseconds(SystemPrimitives.GetDoubleClickTime())
+        };
+        singleClickTimer.Tick += OnSingleClickTimerTick;
     }
 
     // 3. PUBLIC STATIC SHUTDOWN METHOD
@@ -72,7 +78,7 @@ public sealed class TrayIconManager
     public static void Shutdown()
     {
         // Only perform cleanup if the instance was actually created.
-        if (_lazyInstance.IsValueCreated)
+        if (lazyInstance.IsValueCreated)
         {
             Instance.DisposeCore();
         }
@@ -81,8 +87,8 @@ public sealed class TrayIconManager
     // Timer tick handler
     private void OnSingleClickTimerTick(object? sender, EventArgs e)
     {
-        _singleClickTimer.Stop();
-        InvokeEvent(IconLeftClicked, _pendingSingleClickId);
+        singleClickTimer.Stop();
+        InvokeEvent(IconLeftClicked, pendingSingleClickId);
     }
 
     /// <summary>
@@ -91,44 +97,46 @@ public sealed class TrayIconManager
     /// <param name="iconHandle">Handle to the icon (HICON). Caller is responsible for keeping this valid if not owned.</param>
     /// <param name="tooltip">Tooltip text.</param>
     /// <returns>The unique ID of the icon.</returns>
+    /// <exception cref="ObjectDisposedException"></exception>
+    /// <exception cref="InvalidOperationException"></exception>
     public uint AddIcon(IntPtr iconHandle, string tooltip)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(TrayIconManager));
+        if (disposed) throw new ObjectDisposedException(nameof(TrayIconManager));
 
-        uint id = _nextId++;
-        var nid = new NativeMethods.NOTIFYICONDATA
+        uint id = nextId++;
+        var nid = new SystemPrimitives.NotifyIconData
         {
-            cbSize = (uint)Marshal.SizeOf<NativeMethods.NOTIFYICONDATA>(),
+            cbSize = (uint)Marshal.SizeOf<SystemPrimitives.NotifyIconData>(),
             hWnd = MessageWindowHandle,
             uID = id,
-            uFlags = NativeMethods.NIF_MESSAGE | NativeMethods.NIF_ICON | NativeMethods.NIF_TIP | NativeMethods.NIF_SHOWTIP,
-            uCallbackMessage = NativeMethods.WM_TRAY_CALLBACK,
+            uFlags = SystemPrimitives.NifMessage | SystemPrimitives.NifIcon | SystemPrimitives.NifTip | SystemPrimitives.NifShowTip,
+            uCallbackMessage = SystemPrimitives.WmTrayCallback,
             hIcon = iconHandle,
             szTip = tooltip,
-            uTimeoutOrVersion = NativeMethods.NOTIFYICON_VERSION_4
+            uTimeoutOrVersion = SystemPrimitives.NotifyIconVersion4
         };
 
-        lock (_lock)
+        lock (locker)
         {
-            if (!NativeMethods.Shell_NotifyIcon(NativeMethods.NIM_ADD, ref nid))
+            if (!SystemPrimitives.NotifyIcon(SystemPrimitives.NimAdd, ref nid))
             {
                 throw new InvalidOperationException("Failed to add system tray icon.");
             }
             // Set version to 4 to receive modern callback behavior
-            NativeMethods.Shell_NotifyIcon(NativeMethods.NIM_SETVERSION, ref nid);
-            _icons[id] = nid;
+            SystemPrimitives.NotifyIcon(SystemPrimitives.NimSetversion, ref nid);
+            icons[id] = nid;
         }
         return id;
     }
 
     public void RemoveIcon(uint id)
     {
-        lock (_lock)
+        lock (locker)
         {
-            if (_icons.TryGetValue(id, out var nid))
+            if (icons.TryGetValue(id, out var nid))
             {
-                NativeMethods.Shell_NotifyIcon(NativeMethods.NIM_DELETE, ref nid);
-                _icons.Remove(id);
+                SystemPrimitives.NotifyIcon(SystemPrimitives.NimDelete, ref nid);
+                icons.Remove(id);
             }
         }
     }
@@ -136,24 +144,24 @@ public sealed class TrayIconManager
     /// <summary>
     /// Updates the balloon tip (Legacy/Win7 support).
     /// </summary>
-    public void ShowBalloon(uint id, string title, string message, uint iconType = NativeMethods.NIIF_INFO)
+    public void ShowBalloon(uint id, string title, string message, uint iconType = SystemPrimitives.NiifInfo)
     {
-        lock (_lock)
+        lock (locker)
         {
-            if (!_icons.TryGetValue(id, out var nid)) return;
-            nid.uFlags = NativeMethods.NIF_INFO;
+            if (!icons.TryGetValue(id, out var nid)) return;
+            nid.uFlags = SystemPrimitives.NifInfo;
             nid.szInfoTitle = title;
             nid.szInfo = message;
             nid.dwInfoFlags = iconType;
-            NativeMethods.Shell_NotifyIcon(NativeMethods.NIM_MODIFY, ref nid);
+            SystemPrimitives.NotifyIcon(SystemPrimitives.NimModify, ref nid);
         }
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == NativeMethods.WM_TRAY_CALLBACK)
+        if (msg == SystemPrimitives.WmTrayCallback)
         {
-            // CRITICAL FIX: Correct parsing for NOTIFYICON_VERSION_4
+            // Correct parsing for NOTIFYICON_VERSION_4
             // In Version 4:
             // lParam (Low Word)  = Mouse Message (e.g., WM_MOUSEMOVE)
             // lParam (High Word) = Icon ID
@@ -165,33 +173,33 @@ public sealed class TrayIconManager
 
             switch (mouseMsg)
             {
-                case NativeMethods.WM_LBUTTONUP:
+                case SystemPrimitives.WmLButtonUp:
                     // If we just handled a double-click, ignore this trailing mouse-up event.
-                    if (_handlingDoubleClick)
+                    if (handlingDoubleClick)
                     {
-                        _handlingDoubleClick = false;
+                        handlingDoubleClick = false;
                         break;
                     }
 
                     // Otherwise, start the timer to wait for a potential double-click.
-                    _singleClickTimer.Stop();
-                    _pendingSingleClickId = id;
-                    _singleClickTimer.Start();
+                    singleClickTimer.Stop();
+                    pendingSingleClickId = id;
+                    singleClickTimer.Start();
                     break;
 
-                case NativeMethods.WM_LBUTTONDBLCLK:
+                case SystemPrimitives.WmLButtonUpDblClk:
                     // A double-click occurred. Stop the single-click timer,
                     // set the flag to ignore the next mouse-up, and fire the event.
-                    _singleClickTimer.Stop();
-                    _handlingDoubleClick = true;
+                    singleClickTimer.Stop();
+                    handlingDoubleClick = true;
                     InvokeEvent(IconDoubleClicked, id);
                     break;
 
-                case NativeMethods.WM_RBUTTONUP:
+                case SystemPrimitives.WmRButtonUp:
                     InvokeEvent(IconRightClicked, id);
                     break;
 
-                case NativeMethods.WM_MOUSEMOVE:
+                case SystemPrimitives.WmMouseMove:
                     InvokeEvent(IconMouseMove, id);
                     break;
             }
@@ -203,13 +211,13 @@ public sealed class TrayIconManager
     private void InvokeEvent(Action<uint>? evt, uint id)
     {
         if (evt == null) return;
-        if (_messageWindow.Dispatcher.CheckAccess())
+        if (messageWindow.Dispatcher.CheckAccess())
         {
             evt(id);
         }
         else
         {
-            _messageWindow.Dispatcher.InvokeAsync(() => evt(id));
+            messageWindow.Dispatcher.InvokeAsync(() => evt(id));
         }
     }
 
@@ -218,22 +226,22 @@ public sealed class TrayIconManager
     // it can only be called through the controlled Shutdown() path.
     private void DisposeCore()
     {
-        if (_disposed) return;
-        _disposed = true;
+        if (disposed) return;
+        disposed = true;
 
         // Stop the timer on dispose
-        _singleClickTimer.Stop();
+        singleClickTimer.Stop();
 
-        lock (_lock)
+        lock (locker)
         {
-            foreach (var nid in _icons.Values)
+            foreach (var nid in icons.Values)
             {
                 var copy = nid; // struct copy
-                NativeMethods.Shell_NotifyIcon(NativeMethods.NIM_DELETE, ref copy);
+                SystemPrimitives.NotifyIcon(SystemPrimitives.NimDelete, ref copy);
             }
-            _icons.Clear();
+            icons.Clear();
         }
-        _messageWindow.RemoveHook(WndProc);
-        _messageWindow.Dispose();
+        messageWindow.RemoveHook(WndProc);
+        messageWindow.Dispose();
     }
 }

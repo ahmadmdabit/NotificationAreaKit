@@ -16,7 +16,7 @@ public static class WpfContextMenuExtensions
     /// <param name="menu">The context menu to show.</param>
     public static void ShowAtCursor(this ContextMenu menu)
     {
-        NativeMethods.GetCursorPos(out var pt);
+        SystemPrimitives.GetCursorPos(out var pt);
 
         menu.Placement = PlacementMode.AbsolutePoint;
         menu.HorizontalOffset = pt.X;

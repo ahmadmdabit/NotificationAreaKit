@@ -54,12 +54,12 @@ The library implements a strategy pattern for notifications:
 
 - **ToastNotificationService**: Uses Windows.UI.Notifications for modern toasts
 - **ResilientNotificationService**: Wraps toast service with fallback logic
-- **Balloon Notifications**: Legacy support via Shell_NotifyIcon
+- **Balloon Notifications**: Legacy support via NotifyIcon
 
 ### Win32 Interop
 
 Handles complex Win32 APIs:
-- Icon management with Shell_NotifyIcon
+- Icon management with NotifyIcon
 - Message loop integration
 - Cursor position tracking
 - Rectangle calculations for hover detection

@@ -7,39 +7,39 @@ namespace NotificationAreaKit.Wpf.Internal.Interop;
 /// Uses LibraryImport for optimized, compile-time marshalling where possible.
 /// </summary>
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1305:Field names should not use Hungarian notation", Justification = "Win32 API conventions.")]
-internal static partial class NativeMethods
+internal static partial class SystemPrimitives
 {
-    #region Shell_NotifyIcon Definitions
+    #region NotifyIcon Definitions
 
-    // Shell_NotifyIcon Commands
-    public const uint NIM_ADD = 0x00000000;
+    // NotifyIcon Commands
+    public const uint NimAdd = 0x00000000;
 
-    public const uint NIM_MODIFY = 0x00000001;
-    public const uint NIM_DELETE = 0x00000002;
-    public const uint NIM_SETVERSION = 0x00000004;
+    public const uint NimModify = 0x00000001;
+    public const uint NimDelete = 0x00000002;
+    public const uint NimSetversion = 0x00000004;
 
     // NOTIFYICONDATA Version
-    public const uint NOTIFYICON_VERSION_4 = 4; // Use Windows Vista+ features
+    public const uint NotifyIconVersion4 = 4; // Use Windows Vista+ features
 
     // NOTIFYICONDATA Flags
-    public const uint NIF_MESSAGE = 0x00000001;
+    public const uint NifMessage = 0x00000001;
 
-    public const uint NIF_ICON = 0x00000002;
-    public const uint NIF_TIP = 0x00000004;
-    public const uint NIF_INFO = 0x00000010; // For Balloon tips
-    public const uint NIF_SHOWTIP = 0x00000080; // Use szTip as the standard tooltip
+    public const uint NifIcon = 0x00000002;
+    public const uint NifTip = 0x00000004;
+    public const uint NifInfo = 0x00000010; // For Balloon tips
+    public const uint NifShowTip = 0x00000080; // Use szTip as the standard tooltip
 
     // Balloon Icon Types (dwInfoFlags)
-    public const uint NIIF_NONE = 0x00000000;
+    public const uint NiifNone = 0x00000000;
 
-    public const uint NIIF_INFO = 0x00000001;
-    public const uint NIIF_WARNING = 0x00000002;
-    public const uint NIIF_ERROR = 0x00000003;
-    public const uint NIIF_USER = 0x00000004;
-    public const uint NIIF_LARGE_ICON = 0x00000020;
+    public const uint NiifInfo = 0x00000001;
+    public const uint NiifWarning = 0x00000002;
+    public const uint NiifError = 0x00000003;
+    public const uint NiifUser = 0x00000004;
+    public const uint NiifLargeIcon = 0x00000020;
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    public struct NOTIFYICONDATA
+    public struct NotifyIconData
     {
         public uint cbSize;
         public IntPtr hWnd;
@@ -68,7 +68,7 @@ internal static partial class NativeMethods
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct NOTIFYICONIDENTIFIER
+    public struct NotifyIconIdentifier
     {
         public uint cbSize;
         public IntPtr hWnd;
@@ -76,41 +76,41 @@ internal static partial class NativeMethods
         public Guid guidItem;
     }
 
-    [DllImport("shell32.dll", SetLastError = true)]
-    public static extern int Shell_NotifyIconGetRect(ref NOTIFYICONIDENTIFIER identifier, out RECT iconLocation);
+    [DllImport("shell32.dll", EntryPoint = "Shell_NotifyIconGetRect", SetLastError = true)]
+    public static extern int NotifyIconGetRect(ref NotifyIconIdentifier identifier, out Rect iconLocation);
 
     // DllImport is used here because LibraryImport source generator has issues with complex structs passed by reference.
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [DllImport("shell32.dll", EntryPoint = "Shell_NotifyIcon", CharSet = CharSet.Unicode, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool Shell_NotifyIcon(uint dwMessage, ref NOTIFYICONDATA lpData);
+    public static extern bool NotifyIcon(uint dwMessage, ref NotifyIconData lpData);
 
-    #endregion Shell_NotifyIcon Definitions
+    #endregion NotifyIcon Definitions
 
     #region Window Message Constants
 
-    public const int WM_USER = 0x0400;
-    public const int WM_TRAY_CALLBACK = WM_USER + 1;
+    public const int WmUser = 0x0400;
+    public const int WmTrayCallback = WmUser + 1;
 
     // Mouse Messages
-    public const int WM_LBUTTONUP = 0x0202;
+    public const int WmLButtonUp = 0x0202;
 
-    public const int WM_LBUTTONDBLCLK = 0x0203;
-    public const int WM_RBUTTONUP = 0x0205;
-    public const int WM_MOUSEMOVE = 0x0200;
+    public const int WmRButtonUp = 0x0205;
+    public const int WmLButtonUpDblClk = 0x0203;
+    public const int WmMouseMove = 0x0200;
 
     #endregion Window Message Constants
 
     #region User32 Definitions
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct POINT
+    public struct Point
     {
         public int X;
         public int Y;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct RECT
+    public struct Rect
     {
         public int Left;
         public int Top;
@@ -119,17 +119,17 @@ internal static partial class NativeMethods
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    public struct MONITORINFO
+    public struct MonitorInfo
     {
         public uint cbSize;
-        public RECT rcMonitor;
-        public RECT rcWork;
+        public Rect rcMonitor;
+        public Rect rcWork;
         public uint dwFlags;
     }
 
     [LibraryImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static partial bool GetCursorPos(out POINT lpPoint);
+    public static partial bool GetCursorPos(out Point lpPoint);
 
     [LibraryImport("user32.dll")]
     public static partial uint GetDoubleClickTime();
@@ -139,13 +139,13 @@ internal static partial class NativeMethods
     public static partial bool DestroyIcon(IntPtr hIcon);
 
     [LibraryImport("user32.dll")]
-    public static partial IntPtr MonitorFromPoint(POINT pt, uint dwFlags);
+    public static partial IntPtr MonitorFromPoint(Point pt, uint dwFlags);
 
-    public const uint MONITOR_DEFAULTTONEAREST = 0x00000002;
+    public const uint MonitorDefaultToNearest = 0x00000002;
 
     [LibraryImport("user32.dll", EntryPoint = "GetMonitorInfoW", StringMarshalling = StringMarshalling.Utf16)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static partial bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+    public static partial bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfo lpmi);
 
     #endregion User32 Definitions
 }

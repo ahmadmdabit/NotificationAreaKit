@@ -1,9 +1,10 @@
 ﻿using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
+
+using NotificationAreaKit.Core.Notifications;
 using NotificationAreaKit.Wpf.Internal;
 using NotificationAreaKit.Wpf.Internal.Interop;
-using NotificationAreaKit.Core.Notifications;
 
 namespace NotificationAreaKit.Wpf;
 
@@ -14,17 +15,19 @@ namespace NotificationAreaKit.Wpf;
 public sealed class WpfTrayIcon : IDisposable
 {
     // This now holds a reference to the SHARED singleton instance.
-    private readonly TrayIconManager _trayManager;
-    private readonly INotificationService _notificationService;
-    private readonly System.Drawing.Icon _icon;
-    private readonly uint _iconId;
-    private bool _disposed;
+    private readonly TrayIconManager trayManager;
+
+    private readonly INotificationService notificationService;
+    private readonly System.Drawing.Icon icon;
+    private readonly uint iconId;
+    private bool disposed;
 
     // State machine components for hover functionality
-    private HoverPopupWindow? _hoverPopup;
-    private DispatcherTimer? _hoverDelayTimer;
-    private DispatcherTimer? _hideTimer;
-    private DispatcherTimer? _mouseLeavePollTimer;
+    private HoverPopupWindow? hoverPopup;
+
+    private DispatcherTimer? hoverDelayTimer;
+    private DispatcherTimer? hideTimer;
+    private DispatcherTimer? mouseLeavePollTimer;
 
     /// <summary>
     /// Raised when the user performs a single left-click on the tray icon.
@@ -68,46 +71,46 @@ public sealed class WpfTrayIcon : IDisposable
         var streamInfo = Application.GetResourceStream(iconUri)
             ?? throw new ArgumentException($"Icon resource not found at path: {iconResourcePath}", nameof(iconResourcePath));
 
-        _icon = new System.Drawing.Icon(streamInfo.Stream);
+        icon = new System.Drawing.Icon(streamInfo.Stream);
 
-        // CRITICAL FIX: Get the singleton instance instead of creating a new one.
-        _trayManager = TrayIconManager.Instance;
-        _iconId = _trayManager.AddIcon(_icon.Handle, tooltip);
+        // Get the singleton instance instead of creating a new one.
+        trayManager = TrayIconManager.Instance;
+        iconId = trayManager.AddIcon(icon.Handle, tooltip);
 
-        _notificationService = NotificationFactory.Create(_trayManager, _iconId, appId);
+        notificationService = NotificationFactory.Create(trayManager, iconId, appId);
 
-        _trayManager.IconLeftClicked += OnIconLeftClicked;
-        _trayManager.IconRightClicked += OnIconRightClicked;
-        _trayManager.IconDoubleClicked += OnIconDoubleClicked;
-        _trayManager.IconMouseMove += OnIconMouseMove;
+        trayManager.IconLeftClicked += OnIconLeftClicked;
+        trayManager.IconRightClicked += OnIconRightClicked;
+        trayManager.IconDoubleClicked += OnIconDoubleClicked;
+        trayManager.IconMouseMove += OnIconMouseMove;
     }
 
     /// <summary>
     /// Displays a notification. This will automatically use a modern Toast on supported
     /// OS versions or a legacy Balloon tip as a fallback.
     /// </summary>
-    public void ShowNotification(string title, string message) => _notificationService.Notify(title, message);
+    public void ShowNotification(string title, string message) => notificationService.Notify(title, message);
 
     /// <summary>
     /// Explicitly displays a legacy-style Balloon notification.
     /// </summary>
-    public void ShowBalloon(string title, string message) => _trayManager.ShowBalloon(_iconId, title, message);
+    public void ShowBalloon(string title, string message) => trayManager.ShowBalloon(iconId, title, message);
 
     private void OnIconLeftClicked(uint id)
     {
-        if (id != _iconId) return;
+        if (id != iconId) return;
         LeftClick?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnIconRightClicked(uint id)
     {
-        if (id != _iconId) return;
+        if (id != iconId) return;
         RightClick?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnIconDoubleClicked(uint id)
     {
-        if (id != _iconId) return;
+        if (id != iconId) return;
         DoubleClick?.Invoke(this, EventArgs.Empty);
     }
 
@@ -115,123 +118,123 @@ public sealed class WpfTrayIcon : IDisposable
 
     private void OnIconMouseMove(uint id)
     {
-        if (id != _iconId || HoverContent is null) return;
+        if (id != iconId || HoverContent is null) return;
 
-        _hideTimer?.Stop();
+        hideTimer?.Stop();
 
         // DO NOT start the polling timer here. This was the source of the race condition.
 
-        if (_hoverPopup is { IsVisible: true }) return;
+        if (hoverPopup is { IsVisible: true }) return;
 
-        if (_hoverDelayTimer is null)
+        if (hoverDelayTimer is null)
         {
-            _hoverDelayTimer = new DispatcherTimer { Interval = HoverDelay };
-            _hoverDelayTimer.Tick += (s, e) => ShowHoverPopup();
+            hoverDelayTimer = new DispatcherTimer { Interval = HoverDelay };
+            hoverDelayTimer.Tick += (s, e) => ShowHoverPopup();
         }
-        _hoverDelayTimer.Stop();
-        _hoverDelayTimer.Start();
+        hoverDelayTimer.Stop();
+        hoverDelayTimer.Start();
     }
 
     private void OnMouseLeavePollTimerTick(object? sender, EventArgs e)
     {
-        var identifier = new NativeMethods.NOTIFYICONIDENTIFIER
+        var identifier = new SystemPrimitives.NotifyIconIdentifier
         {
-            cbSize = (uint)Marshal.SizeOf<NativeMethods.NOTIFYICONIDENTIFIER>(),
-            hWnd = _trayManager.MessageWindowHandle,
-            uID = _iconId
+            cbSize = (uint)Marshal.SizeOf<SystemPrimitives.NotifyIconIdentifier>(),
+            hWnd = trayManager.MessageWindowHandle,
+            uID = iconId
         };
 
-        if (NativeMethods.Shell_NotifyIconGetRect(ref identifier, out var iconRect) == 0)
+        if (SystemPrimitives.NotifyIconGetRect(ref identifier, out var iconRect) == 0)
         {
-            NativeMethods.GetCursorPos(out var cursorPoint);
+            SystemPrimitives.GetCursorPos(out var cursorPoint);
             var wpfRect = new Rect(iconRect.Left, iconRect.Top, iconRect.Right - iconRect.Left, iconRect.Bottom - iconRect.Top);
 
             // If the cursor is outside OUR icon's rectangle, we have a "leave" event.
-            if (!wpfRect.Contains(new Point(cursorPoint.X, cursorPoint.Y)))
+            if (!wpfRect.Contains(new Point((double)cursorPoint.X, (double)cursorPoint.Y)))
             {
-                _mouseLeavePollTimer?.Stop(); // Stop polling to save resources.
+                mouseLeavePollTimer?.Stop(); // Stop polling to save resources.
                 StartHideTimer();
             }
         }
         else
         {
             // If we can't get the rect for any reason, stop polling to be safe.
-            _mouseLeavePollTimer?.Stop();
+            mouseLeavePollTimer?.Stop();
         }
     }
 
     private void ShowHoverPopup()
     {
-        _hoverDelayTimer?.Stop();
+        hoverDelayTimer?.Stop();
         if (HoverContent is null) return;
 
-        if (_hoverPopup is null)
+        if (hoverPopup is null)
         {
-            _hoverPopup = new HoverPopupWindow();
-            _hoverPopup.MouseLeave += (s, e) => StartHideTimer();
-            _hoverPopup.MouseEnter += (s, e) => _hideTimer?.Stop();
+            hoverPopup = new HoverPopupWindow();
+            hoverPopup.MouseLeave += (s, e) => StartHideTimer();
+            hoverPopup.MouseEnter += (s, e) => hideTimer?.Stop();
         }
 
-        _hoverPopup.Child = HoverContent;
-        _hoverPopup.ShowAtCursor();
+        hoverPopup.Child = HoverContent;
+        hoverPopup.ShowAtCursor();
 
-        // THE FIX: Start polling for "mouse leave" ONLY AFTER the popup is shown.
-        if (_mouseLeavePollTimer is null)
+        // Start polling for "mouse leave" ONLY AFTER the popup is shown.
+        if (mouseLeavePollTimer is null)
         {
-            _mouseLeavePollTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
-            _mouseLeavePollTimer.Tick += OnMouseLeavePollTimerTick;
+            mouseLeavePollTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+            mouseLeavePollTimer.Tick += OnMouseLeavePollTimerTick;
         }
-        _mouseLeavePollTimer.Start();
+        mouseLeavePollTimer.Start();
     }
 
     private void StartHideTimer()
     {
-        _hoverDelayTimer?.Stop();
+        hoverDelayTimer?.Stop();
         // Also stop polling when we start the hide process.
-        _mouseLeavePollTimer?.Stop();
+        mouseLeavePollTimer?.Stop();
 
-        if (_hideTimer is null)
+        if (hideTimer is null)
         {
-            _hideTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
-            _hideTimer.Tick += (s, e) => HideHoverPopup();
+            hideTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+            hideTimer.Tick += (s, e) => HideHoverPopup();
         }
-        _hideTimer.Start();
+        hideTimer.Start();
     }
 
     private void HideHoverPopup()
     {
-        _hideTimer?.Stop();
-        _mouseLeavePollTimer?.Stop(); // Ensure polling is stopped when hidden.
-        _hoverPopup?.Hide();
+        hideTimer?.Stop();
+        mouseLeavePollTimer?.Stop(); // Ensure polling is stopped when hidden.
+        hoverPopup?.Hide();
     }
 
-    #endregion
+    #endregion Hover State Machine Logic
 
     /// <summary>
     /// Removes the icon from the notification area and releases all resources.
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (disposed) return;
 
         // Unsubscribe from the shared manager's events.
-        _trayManager.IconLeftClicked -= OnIconLeftClicked;
-        _trayManager.IconRightClicked -= OnIconRightClicked;
-        _trayManager.IconDoubleClicked -= OnIconDoubleClicked;
-        _trayManager.IconMouseMove -= OnIconMouseMove;
+        trayManager.IconLeftClicked -= OnIconLeftClicked;
+        trayManager.IconRightClicked -= OnIconRightClicked;
+        trayManager.IconDoubleClicked -= OnIconDoubleClicked;
+        trayManager.IconMouseMove -= OnIconMouseMove;
 
         // Stop any timers associated with this instance.
-        _hoverDelayTimer?.Stop();
-        _hideTimer?.Stop();
-        _mouseLeavePollTimer?.Stop();
+        hoverDelayTimer?.Stop();
+        hideTimer?.Stop();
+        mouseLeavePollTimer?.Stop();
 
-        _hoverPopup?.Close();
+        hoverPopup?.Close();
 
-        // CRITICAL FIX: Only remove this specific icon. Do NOT dispose the shared manager.
-        _trayManager.RemoveIcon(_iconId);
-        _icon.Dispose();
+        // Only remove this specific icon. Do NOT dispose the shared manager.
+        trayManager.RemoveIcon(iconId);
+        icon.Dispose();
 
-        _disposed = true;
+        disposed = true;
         GC.SuppressFinalize(this);
     }
 }

@@ -20,7 +20,7 @@ public partial class HoverPopupWindow : Window
     /// </summary>
     public UIElement Child
     {
-        get => ContentHost.Content as UIElement;
+        get => (ContentHost.Content as UIElement)!;
         set => ContentHost.Content = value;
     }
 
@@ -35,15 +35,17 @@ public partial class HoverPopupWindow : Window
         this.Show();
         this.UpdateLayout();
 
-        NativeMethods.GetCursorPos(out var cursorPoint);
+        SystemPrimitives.GetCursorPos(out var cursorPoint);
 
         // 1. Get the handle to the monitor the cursor is on.
-        IntPtr hMonitor = NativeMethods.MonitorFromPoint(cursorPoint, NativeMethods.MONITOR_DEFAULTTONEAREST);
+        IntPtr hMonitor = SystemPrimitives.MonitorFromPoint(cursorPoint, SystemPrimitives.MonitorDefaultToNearest);
 
         // 2. Get the monitor's information, including the crucial "working area".
-        var monitorInfo = new NativeMethods.MONITORINFO();
-        monitorInfo.cbSize = (uint)Marshal.SizeOf(typeof(NativeMethods.MONITORINFO));
-        NativeMethods.GetMonitorInfo(hMonitor, ref monitorInfo);
+        var monitorInfo = new SystemPrimitives.MonitorInfo
+        {
+            cbSize = (uint)Marshal.SizeOf<SystemPrimitives.MonitorInfo>()
+        };
+        SystemPrimitives.GetMonitorInfo(hMonitor, ref monitorInfo);
         var workingArea = monitorInfo.rcWork;
 
         double targetLeft;

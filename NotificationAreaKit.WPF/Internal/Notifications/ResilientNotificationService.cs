@@ -11,26 +11,26 @@ namespace NotificationAreaKit.Wpf.Internal.Notifications;
 /// </summary>
 internal sealed class ResilientNotificationService : INotificationService
 {
-    private readonly INotificationService _toastService;
-    private readonly INotificationService _balloonService;
+    private readonly INotificationService toastService;
+    private readonly INotificationService balloonService;
 
     public ResilientNotificationService(TrayIconManager manager, uint iconId, string appId)
     {
-        _toastService = new ToastNotificationService(appId);
-        _balloonService = new BalloonNotificationService(manager, iconId);
+        toastService = new ToastNotificationService(appId);
+        balloonService = new BalloonNotificationService(manager, iconId);
     }
 
     public void Notify(string title, string message)
     {
         try
         {
-            _toastService.Notify(title, message);
+            toastService.Notify(title, message);
         }
         catch (COMException ex) when (ex.HResult == unchecked((int)0x80070490)) // ERROR_NOT_FOUND
         {
             // This specific error occurs on the first run when the Start Menu shortcut
-            // has not yet been indexed by the shell. Fallback to the balloon tip.
-            _balloonService.Notify(title, message);
+            // has not yet been indexed by the OS. Fallback to the balloon tip.
+            balloonService.Notify(title, message);
         }
     }
 }

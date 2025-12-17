@@ -57,7 +57,6 @@ The solution uses a layered architecture for maintainability:
 - **.NET SDK**: 9.0 or later
 - **Platform**: Windows 7 or newer
 - **Development**: Windows 7/10/11 for full feature testing
-- **Tools**: PowerShell or Bash for scripting
 
 ## Getting Started
 

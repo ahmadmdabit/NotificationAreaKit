@@ -9,7 +9,7 @@ namespace NotificationAreaKit.Core.Notifications;
 /// </summary>
 internal sealed class ToastNotificationService : INotificationService
 {
-    private readonly string _appId;
+    private readonly string appId;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ToastNotificationService"/> class.
@@ -22,7 +22,7 @@ internal sealed class ToastNotificationService : INotificationService
         {
             throw new ArgumentException("Application ID (AUMID) cannot be null or whitespace.", nameof(appId));
         }
-        _appId = appId;
+        this.appId = appId;
     }
 
     /// <inheritdoc/>
@@ -40,6 +40,6 @@ internal sealed class ToastNotificationService : INotificationService
 
         // CRITICAL: Use the overload that accepts the AUMID. This is the key to making
         // toasts reliable in unpackaged desktop apps, removing OS ambiguity.
-        ToastNotificationManager.CreateToastNotifier(_appId).Show(toast);
+        ToastNotificationManager.CreateToastNotifier(appId).Show(toast);
     }
 }

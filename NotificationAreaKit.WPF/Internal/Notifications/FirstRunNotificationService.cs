@@ -19,13 +19,13 @@ internal sealed class FirstRunNotificationService : INotificationService
         "MyTrayApp", // Use a dedicated folder for your app's data
         "firstrun.flag");
 
-    private readonly INotificationService _toastService;
-    private readonly INotificationService _balloonService;
+    private readonly INotificationService toastService;
+    private readonly INotificationService balloonService;
 
     public FirstRunNotificationService(INotificationService toastService, INotificationService balloonService)
     {
-        _toastService = toastService;
-        _balloonService = balloonService;
+        this.toastService = toastService;
+        this.balloonService = balloonService;
     }
 
     public void Notify(string title, string message)
@@ -33,7 +33,7 @@ internal sealed class FirstRunNotificationService : INotificationService
         if (!File.Exists(FlagFilePath))
         {
             // On the first run, use the reliable balloon service.
-            _balloonService.Notify(title, message);
+            balloonService.Notify(title, message);
 
             // After the first notification, create the flag file so that
             // subsequent runs will be treated as normal.
@@ -43,7 +43,7 @@ internal sealed class FirstRunNotificationService : INotificationService
         {
             // On all subsequent runs, the AUMID is guaranteed to be registered.
             // We can now safely use the modern toast service.
-            _toastService.Notify(title, message);
+            toastService.Notify(title, message);
         }
     }
 

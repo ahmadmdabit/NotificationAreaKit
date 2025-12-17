@@ -37,13 +37,12 @@
                 </StackPanel>
             </Border>
         </UserControl>
-
     </Window.Resources>
 
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250" />
             <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="2*" />
         </Grid.ColumnDefinitions>
 
         <!--  Left Panel: Controls  -->
@@ -85,13 +84,15 @@
                     <CheckBox
                         x:Name="HideOnCloseCheckBox"
                         Margin="5"
-                        Content="Hide Window on Close (Tray Icon Pattern)"
-                        IsChecked="True" />
+                        IsChecked="True">
+                        <TextBlock Text="Hide Window on Close (Tray Icon Pattern)" TextWrapping="Wrap" />
+                    </CheckBox>
                     <CheckBox
                         x:Name="EnableHoverCheckBox"
                         Margin="5"
-                        Content="Enable Hover Content"
-                        IsChecked="True" />
+                        IsChecked="True">
+                        <TextBlock Text="Enable Hover Content" TextWrapping="Wrap" />
+                    </CheckBox>
                     <Button
                         Margin="5"
                         Padding="5"

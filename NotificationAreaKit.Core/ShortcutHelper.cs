@@ -13,7 +13,7 @@ namespace NotificationAreaKit.Core;
 internal static class ShortcutHelper
 {
     // A lock object to ensure thread-safety when checking for and creating the shortcut.
-    private static readonly object _lock = new();
+    private static readonly Lock locker = new();
 
     /// <summary>
     /// Ensures a shortcut for the current application exists in the Start Menu,
@@ -30,7 +30,7 @@ internal static class ShortcutHelper
             $"{appName}.lnk");
 
         // Thread-safe check and creation block.
-        lock (_lock)
+        lock (locker)
         {
             if (File.Exists(shortcutPath))
             {
@@ -38,17 +38,17 @@ internal static class ShortcutHelper
             }
 
             var processPath = Process.GetCurrentProcess().MainModule?.FileName;
-            if (string.IsNullOrEmpty(processPath)) return;
+            if (string.IsNullOrEmpty(processPath) || !Directory.Exists(Path.GetDirectoryName(processPath))) return;
 
-            // Create the COM object for the shell link.
-            NativeMethods.IShellLinkW link = (NativeMethods.IShellLinkW)new NativeMethods.ShellLink();
+            // Create the COM object for the link.
+            SystemPrimitives.IStructureLinkW link = (SystemPrimitives.IStructureLinkW)new SystemPrimitives.StructureLink();
             link.SetPath(processPath);
-            link.SetWorkingDirectory(Path.GetDirectoryName(processPath));
+            link.SetWorkingDirectory(Path.GetDirectoryName(processPath)!);
 
             // Query for the IPropertyStore interface to set the AUMID.
-            NativeMethods.IPropertyStore store = (NativeMethods.IPropertyStore)link;
-            var pkey = new NativeMethods.PropertyKey { fmtid = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"), pid = 5 }; // System.AppUserModel.ID
-            var propvar = new NativeMethods.PropVariant();
+            SystemPrimitives.IPropertyStore store = (SystemPrimitives.IPropertyStore)link;
+            var pkey = new SystemPrimitives.PropertyKey { fmtid = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"), pid = 5 }; // System.AppUserModel.ID
+            var propvar = new SystemPrimitives.PropVariant();
 
             try
             {
@@ -64,7 +64,7 @@ internal static class ShortcutHelper
             finally
             {
                 // CRITICAL: Clean up unmanaged resources to prevent memory leaks.
-                NativeMethods.PropVariantClear(ref propvar);
+                SystemPrimitives.PropVariantClear(ref propvar);
                 Marshal.ReleaseComObject(store);
                 Marshal.ReleaseComObject(link);
             }

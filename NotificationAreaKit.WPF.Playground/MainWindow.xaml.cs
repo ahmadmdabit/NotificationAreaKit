@@ -20,14 +20,14 @@ public partial class MainWindow : Window, IDisposable
 
     // 2. MANAGE STATE
     // A list to hold our active tray icons and a counter for unique tooltips.
-    private readonly List<WpfTrayIcon> _managedIcons = new();
+    private readonly List<WpfTrayIcon> managedIcons = [];
 
-    private int _iconCounter = 0;
+    private int iconCounter = 0;
 
     private bool isDirectClose;
 
     // An ObservableCollection automatically updates the UI when items are added.
-    public ObservableCollection<string> LogMessages { get; } = new();
+    public ObservableCollection<string> LogMessages { get; } = [];
 
     // Commands for the ContextMenu, bound via DataContext.
     public ICommand ShowWindowCommand { get; }
@@ -55,13 +55,13 @@ public partial class MainWindow : Window, IDisposable
     // 3. ICON MANAGEMENT LOGIC
     private void AddIcon_Click(object sender, RoutedEventArgs e)
     {
-        _iconCounter++;
+        iconCounter++;
         // Alternate between two different icons for variety.
-        var iconPath = _iconCounter % 2 == 1
+        var iconPath = iconCounter % 2 == 1
             ? "pack://application:,,,/Resources/Images/Icons/star.ico"
             : "pack://application:,,,/Resources/Images/Icons/profile.ico";
 
-        var tooltip = $"My Tray Icon #{_iconCounter}";
+        var tooltip = $"My Tray Icon #{iconCounter}";
 
         try
         {
@@ -79,7 +79,7 @@ public partial class MainWindow : Window, IDisposable
             trayIcon.RightClick += OnIconRightClick;
             trayIcon.DoubleClick += OnIconDoubleClick;
 
-            _managedIcons.Add(trayIcon);
+            managedIcons.Add(trayIcon);
             Log($"SUCCESS: Added '{tooltip}' to the notification area.");
         }
         catch (Exception ex)
@@ -90,15 +90,15 @@ public partial class MainWindow : Window, IDisposable
 
     private void RemoveIcon_Click(object sender, RoutedEventArgs e)
     {
-        if (_managedIcons.Count == 0)
+        if (managedIcons.Count == 0)
         {
             Log("INFO: No icons to remove.");
             return;
         }
 
         // Gracefully remove and dispose of the last icon added.
-        var lastIcon = _managedIcons[^1];
-        _managedIcons.Remove(lastIcon);
+        var lastIcon = managedIcons[^1];
+        managedIcons.Remove(lastIcon);
         lastIcon.Dispose(); // This is CRITICAL for cleanup.
 
         Log("SUCCESS: Removed last icon.");
@@ -111,7 +111,7 @@ public partial class MainWindow : Window, IDisposable
         Log("EVENT: LeftClick received.");
 
         // Use the ShowNotification method for the best experience (Toast or Balloon).
-        icon.ShowNotification("Hello!", "This is a modern toast notification.");
+        icon.ShowNotification("Hello!", $"This is a modern toast notification. [{DateTime.Now:O}]");
         Log("ACTION: ShowNotification called.");
     }
 
@@ -142,13 +142,13 @@ public partial class MainWindow : Window, IDisposable
     // 5. EDGE CASE DEMONSTRATIONS
     private void ShowBalloon_Click(object sender, RoutedEventArgs e)
     {
-        if (_managedIcons.Count == 0)
+        if (managedIcons.Count == 0)
         {
             Log("INFO: Add an icon first to show a balloon.");
             return;
         }
         // Explicitly request the legacy balloon style.
-        _managedIcons[0].ShowBalloon("Old School", "This is a legacy balloon tip.");
+        managedIcons[0].ShowBalloon("Hello!", $"This is a legacy balloon tip. [{DateTime.Now:O}] ");
         Log("ACTION: Explicit balloon requested.");
     }
 
@@ -186,11 +186,11 @@ public partial class MainWindow : Window, IDisposable
     public void Dispose()
     {
         // Dispose of all managed tray icons to remove them from the tray.
-        foreach (var icon in _managedIcons)
+        foreach (var icon in managedIcons)
         {
             icon.Dispose();
         }
-        _managedIcons.Clear();
+        managedIcons.Clear();
         GC.SuppressFinalize(this);
     }
 

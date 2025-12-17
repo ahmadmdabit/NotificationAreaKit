@@ -9,31 +9,31 @@ namespace NotificationAreaKit.Wpf.Internal;
 /// </summary>
 internal static class TrayAppInitializer
 {
-    private static readonly Lazy<(string AppId, string AppName)> _initializer = new(InitializeInternal);
-    private static string? _appId;
-    private static string? _appName;
+    private static readonly Lazy<(string AppId, string AppName)> initializer = new(InitializeInternal);
+    private static string? appId;
+    private static string? appName;
 
     public static void Initialize(string appId, string appName)
     {
-        _appId = appId;
-        _appName = appName;
+        TrayAppInitializer.appId = appId;
+        TrayAppInitializer.appName = appName;
         // Accessing the Value property triggers the factory method if it hasn't run.
-        _ = _initializer.Value;
+        _ = initializer.Value;
     }
 
     private static (string AppId, string AppName) InitializeInternal()
     {
-        if (_appId is null || _appName is null)
+        if (appId is null || appName is null)
         {
             throw new InvalidOperationException("Initialization failed: AppId and AppName must be set.");
         }
 
         // 1. Register AUMID (Critical for Toasts)
-        NativeMethods.SetCurrentProcessExplicitAppUserModelID(_appId);
+        SystemPrimitives.SetCurrentProcessExplicitAppUserModelID(appId);
 
         // 2. Ensure Shortcut exists (Critical for Toasts)
-        ShortcutHelper.EnsureShortcutExists(_appId, _appName);
+        ShortcutHelper.EnsureShortcutExists(appId, appName);
 
-        return (_appId, _appName);
+        return (appId, appName);
     }
 }

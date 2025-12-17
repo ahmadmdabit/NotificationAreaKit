@@ -4,17 +4,17 @@ namespace NotificationAreaKit.Wpf.Internal.Notifications;
 
 internal sealed class BalloonNotificationService : INotificationService
 {
-    private readonly TrayIconManager _manager;
-    private readonly uint _iconId;
+    private readonly TrayIconManager manager;
+    private readonly uint iconId;
 
     public BalloonNotificationService(TrayIconManager manager, uint iconId)
     {
-        _manager = manager;
-        _iconId = iconId;
+        this.manager = manager;
+        this.iconId = iconId;
     }
 
     public void Notify(string title, string message)
     {
-        _manager.ShowBalloon(_iconId, title, message);
+        manager.ShowBalloon(iconId, title, message);
     }
 }
