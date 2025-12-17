@@ -1,6 +1,6 @@
 # NotificationAreaKit.WPF
 
-A simple, robust, and production-ready .NET library for creating and managing Windows Notification Area (System Tray) icons in WPF applications.
+A robust, and production-ready .NET library for creating and managing Windows Notification Area (System Tray) icons in WPF applications.
 
 [![.NET Version](https://img.shields.io/badge/.NET-9.0-blueviolet)](https://dotnet.microsoft.com/download/dotnet/9.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
