@@ -13,6 +13,11 @@ A robust, and production-ready .NET library for creating and managing Windows No
 - [Quick Start](#quick-start)
 - [API Reference](#api-reference)
 - [Advanced Usage](#advanced-usage)
+  - [Hover Popups](#hover-popups)
+  - [Dynamic Icons (High Performance)](#dynamic-icons-high-performance)
+  - [Context Menus](#context-menus)
+  - [Multiple Icons](#multiple-icons)
+  - [Minimize to Tray](#minimize-to-tray)
 - [Architecture](#architecture)
 - [Requirements](#requirements)
 - [Troubleshooting](#troubleshooting)
@@ -27,6 +32,7 @@ NotificationAreaKit.WPF provides a clean, object-oriented API for WPF applicatio
 - ✅ **Simple API**: Single `WpfTrayIcon` class for all operations
 - ✅ **Bulletproof Notifications**: Automatic Toast/Balloon fallback
 - ✅ **Hover Popups**: Custom WPF content on icon hover
+- ✅ **Dynamic Icons**: Real-time, zero-allocation rendering for gauges and status indicators
 - ✅ **Multi-Icon Support**: Manage multiple independent icons
 - ✅ **Event-Driven**: Standard click events (Left, Right, Double)
 - ✅ **WPF Integration**: Context menu helpers and UI extensions
@@ -160,6 +166,35 @@ hoverPanel.Children.Add(new TextBlock { Text = "Custom hover content!" });
 
 trayIcon.HoverContent = hoverPanel;
 trayIcon.HoverDelay = TimeSpan.FromMilliseconds(500);
+```
+
+### Dynamic Icons (High Performance)
+
+For scenarios requiring frequent updates (e.g., CPU usage, battery level, unread counts), use the `DynamicIconBuffer`. This pipeline is **thread-safe** and **zero-allocation**, bypassing GDI+ overhead.
+
+```csharp
+// 1. Initialize the buffer (32x32 pixels)
+using var buffer = new DynamicIconBuffer();
+
+// 2. Update pixels on a background thread
+// Use the generic overload to pass state without closure allocations
+int cpuUsage = 42;
+buffer.UpdatePixels(cpuUsage, static (pixels, usage) => 
+{
+    pixels.Clear(); // Clear to transparent
+    
+    // Use the built-in high-performance digit renderer
+    // Draws "42" in Green at 2x scale
+    SmoothDigitRenderer.DrawDigit(pixels, usage / 10, 0, 0, 0xFF00FF00, 2);
+    SmoothDigitRenderer.DrawDigit(pixels, usage % 10, 12, 0, 0xFF00FF00, 2);
+});
+
+// 3. Create and Update HICON
+IntPtr hIcon = buffer.CreateIcon();
+trayIcon.UpdateIcon(hIcon);
+
+// 4. Cleanup the HICON handle immediately
+DynamicIconBuffer.DestroyIcon(hIcon);
 ```
 
 ### Context Menus

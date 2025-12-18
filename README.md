@@ -28,6 +28,7 @@ Key features include:
 - **Simple API**: Single `WpfTrayIcon` class for all tray operations
 - **Bulletproof Notifications**: Automatic Toast/Balloon fallback
 - **Hover Popups**: Custom WPF content on hover
+- **Dynamic Icons**: High-performance, zero-allocation rendering for real-time status indicators (e.g., CPU meters)
 - **Multi-Icon Support**: Manage multiple independent icons
 - **Event-Driven**: Standard click and double-click events
 - **Production-Ready**: Handles edge cases like first-run failures
@@ -37,6 +38,7 @@ Key features include:
 Creating production-quality tray applications is notoriously complex. This library addresses critical challenges:
 
 - **First-Run Notification Failures**: Eliminates `COMException` on initial toast notifications
+- **High-Frequency Updates**: Enables 60fps icon animations without GDI+ handle leaks or GC pressure
 - **Multi-Icon Management**: Clean lifecycle management for multiple icons
 - **Win32 Complexity**: Abstracts P/Invoke and message handling
 - **OS Compatibility**: Seamless support from Windows 7 to 11

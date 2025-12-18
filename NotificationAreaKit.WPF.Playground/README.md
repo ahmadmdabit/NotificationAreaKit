@@ -37,6 +37,13 @@ This playground serves as "living documentation" - a fully functional WPF applic
 - ✅ **Legacy Balloons**: Explicit balloon notification triggering
 - ✅ **Hover Popups**: Custom WPF content on icon hover
 
+### Advanced Performance
+
+- ✅ **Dynamic Icons (CPU Mock)**: Demonstrates the `DynamicIconBuffer` and `SmoothDigitRenderer`.
+  - **Zero-Allocation**: Updates the tray icon at high frequency without triggering GC.
+  - **Thread-Safety**: Renders on a background thread while updating the UI safely.
+  - **Custom Rendering**: Uses raw pixel manipulation for anti-aliased text.
+
 ### UI Patterns
 
 - ✅ **Context Menu Integration**: Right-click menu with ShowAtCursor()
