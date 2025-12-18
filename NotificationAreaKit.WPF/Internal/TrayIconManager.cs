@@ -112,9 +112,11 @@ public sealed class TrayIconManager
             uFlags = SystemPrimitives.NifMessage | SystemPrimitives.NifIcon | SystemPrimitives.NifTip | SystemPrimitives.NifShowTip,
             uCallbackMessage = SystemPrimitives.WmTrayCallback,
             hIcon = iconHandle,
-            szTip = tooltip,
             uTimeoutOrVersion = SystemPrimitives.NotifyIconVersion4
         };
+
+        // Use the helper method to copy the string into the fixed buffer.
+        nid.SetTip(tooltip);
 
         lock (locker)
         {
@@ -127,6 +129,33 @@ public sealed class TrayIconManager
             icons[id] = nid;
         }
         return id;
+    }
+
+    /// <summary>
+    /// Updates the icon image for an existing tray icon.
+    /// </summary>
+    /// <param name="id">The icon ID.</param>
+    /// <param name="iconHandle">The new HICON handle.</param>
+    public void UpdateIcon(uint id, IntPtr iconHandle)
+    {
+        lock (locker)
+        {
+            if (icons.TryGetValue(id, out var nid))
+            {
+                nid.hIcon = iconHandle;
+                nid.uFlags = SystemPrimitives.NifIcon;
+
+                // Note: We do not update the version here, just the visual resource.
+                if (!SystemPrimitives.NotifyIcon(SystemPrimitives.NimModify, ref nid))
+                {
+                    // In high-frequency scenarios, transient failures might occur if the OS is busy.
+                    // We intentionally swallow this to prevent crashing the render loop.
+                }
+
+                // Update the state to ensure subsequent operations use the current handle
+                icons[id] = nid;
+            }
+        }
     }
 
     public void RemoveIcon(uint id)
@@ -149,11 +178,18 @@ public sealed class TrayIconManager
         lock (locker)
         {
             if (!icons.TryGetValue(id, out var nid)) return;
+
             nid.uFlags = SystemPrimitives.NifInfo;
-            nid.szInfoTitle = title;
-            nid.szInfo = message;
             nid.dwInfoFlags = iconType;
+
+            // Use helper methods for fixed buffers
+            nid.SetInfoTitle(title);
+            nid.SetInfo(message);
+
             SystemPrimitives.NotifyIcon(SystemPrimitives.NimModify, ref nid);
+
+            // Update local cache
+            icons[id] = nid;
         }
     }
 

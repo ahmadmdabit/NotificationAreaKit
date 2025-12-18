@@ -6,7 +6,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="NotificationAreaKit Playground"
     Width="800"
-    Height="450"
+    Height="560"
     Closed="WindowClosed"
     Closing="WindowClosing"
     mc:Ignorable="d">
@@ -46,18 +46,21 @@
         </Grid.ColumnDefinitions>
 
         <!--  Left Panel: Controls  -->
-        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+        <StackPanel
+            Grid.Column="0"
+            Margin="0,0,10,0"
+            ScrollViewer.VerticalScrollBarVisibility="Auto">
             <GroupBox Header="Icon Management">
                 <StackPanel>
                     <Button
                         Margin="5"
                         Padding="5"
-                        Click="AddIcon_Click"
+                        Click="AddIconClick"
                         Content="Add New Tray Icon" />
                     <Button
                         Margin="5"
                         Padding="5"
-                        Click="RemoveIcon_Click"
+                        Click="RemoveIconClick"
                         Content="Remove Last Tray Icon" />
                 </StackPanel>
             </GroupBox>
@@ -96,8 +99,37 @@
                     <Button
                         Margin="5"
                         Padding="5"
-                        Click="ShowBalloon_Click"
+                        Click="ShowBalloonClick"
                         Content="Show Explicit Balloon (Win7 Style)" />
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Margin="0,10,0,0" Header="Dynamic Icon (Zero-Alloc)">
+                <StackPanel>
+                    <TextBlock
+                        Margin="5"
+                        FontSize="11"
+                        Foreground="Gray"
+                        Text="Mocks CPU usage with raw pixel rendering."
+                        TextWrapping="Wrap" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button
+                            Grid.Column="0"
+                            Margin="5"
+                            Padding="5"
+                            Click="StartCpuMockClick"
+                            Content="Start Mock" />
+                        <Button
+                            Grid.Column="1"
+                            Margin="5"
+                            Padding="5"
+                            Click="StopCpuMockClick"
+                            Content="Stop Mock" />
+                    </Grid>
                 </StackPanel>
             </GroupBox>
         </StackPanel>

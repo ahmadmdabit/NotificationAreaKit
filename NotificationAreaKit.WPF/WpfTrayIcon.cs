@@ -96,6 +96,17 @@ public sealed class WpfTrayIcon : IDisposable
     /// </summary>
     public void ShowBalloon(string title, string message) => trayManager.ShowBalloon(iconId, title, message);
 
+    /// <summary>
+    /// Updates the tray icon image dynamically using a raw HICON handle.
+    /// This method is designed for high-frequency updates (e.g., animations, status indicators).
+    /// </summary>
+    /// <param name="hIcon">A handle to the new icon (HICON). The caller is responsible for destroying this handle after the update.</param>
+    public void UpdateIcon(IntPtr hIcon)
+    {
+        if (disposed) return;
+        trayManager.UpdateIcon(iconId, hIcon);
+    }
+
     private void OnIconLeftClicked(uint id)
     {
         if (id != iconId) return;

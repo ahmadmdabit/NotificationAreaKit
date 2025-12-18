@@ -1,4 +1,8 @@
-﻿using System.Runtime.InteropServices;
+﻿// NOTE:
+// Do not use CodeMade on this file Ctrl+m, Ctrl+Space
+// Beacause it removes the "fixed" from "public fixed char szInfoTitle[64];"
+
+using System.Runtime.InteropServices;
 
 namespace NotificationAreaKit.Wpf.Internal.Interop;
 
@@ -38,8 +42,12 @@ internal static partial class SystemPrimitives
     public const uint NiifUser = 0x00000004;
     public const uint NiifLargeIcon = 0x00000020;
 
+    /// <summary>
+    /// Blittable version of NOTIFYICONDATA using fixed buffers.
+    /// This eliminates marshalling overhead for high-frequency updates.
+    /// </summary>
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    public struct NotifyIconData
+    public unsafe struct NotifyIconData
     {
         public uint cbSize;
         public IntPtr hWnd;
@@ -48,23 +56,77 @@ internal static partial class SystemPrimitives
         public uint uCallbackMessage;
         public IntPtr hIcon;
 
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-        public string szTip;
+        // Fixed buffer for szTip (128 chars)
+        public fixed char szTip[128];
 
         public uint dwState;
         public uint dwStateMask;
 
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
-        public string szInfo;
+        // Fixed buffer for szInfo (256 chars)
+        //public fixed char szInfo[256];
+        public fixed char szInfo[256];
 
-        public uint uTimeoutOrVersion; // Union for uTimeout and uVersion
+        public uint uTimeoutOrVersion;
 
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
-        public string szInfoTitle;
+        // Fixed buffer for szInfoTitle (64 chars)
+        //public fixed char szInfoTitle[64];
+        public fixed char szInfoTitle[64];
 
         public uint dwInfoFlags;
         public Guid guidItem;
         public IntPtr hBalloonIcon;
+
+        // Helper to set szTip safely
+        public void SetTip(string? text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                szTip[0] = '\0';
+                return;
+            }
+
+            fixed (char* pDest = szTip)
+            {
+                // Truncate to 127 chars to ensure null terminator
+                int length = Math.Min(text.Length, 127);
+                text.AsSpan(0, length).CopyTo(new Span<char>(pDest, 128));
+                pDest[length] = '\0';
+            }
+        }
+
+        // Helper to set szInfo safely
+        public void SetInfo(string? text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                szInfo[0] = '\0';
+                return;
+            }
+
+            fixed (char* pDest = szInfo)
+            {
+                int length = Math.Min(text.Length, 255);
+                text.AsSpan(0, length).CopyTo(new Span<char>(pDest, 256));
+                pDest[length] = '\0';
+            }
+        }
+
+        // Helper to set szInfoTitle safely
+        public void SetInfoTitle(string? text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                szInfoTitle[0] = '\0';
+                return;
+            }
+
+            fixed (char* pDest = szInfoTitle)
+            {
+                int length = Math.Min(text.Length, 63);
+                text.AsSpan(0, length).CopyTo(new Span<char>(pDest, 64));
+                pDest[length] = '\0';
+            }
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -76,13 +138,19 @@ internal static partial class SystemPrimitives
         public Guid guidItem;
     }
 
-    [DllImport("shell32.dll", EntryPoint = "Shell_NotifyIconGetRect", SetLastError = true)]
-    public static extern int NotifyIconGetRect(ref NotifyIconIdentifier identifier, out Rect iconLocation);
+    // Converted to LibraryImport (Blittable)
+    [LibraryImport("shell32.dll", EntryPoint = "Shell_NotifyIconGetRect", SetLastError = true)]
+    public static partial int NotifyIconGetRect(ref NotifyIconIdentifier identifier, out Rect iconLocation);
 
-    // DllImport is used here because LibraryImport source generator has issues with complex structs passed by reference.
-    [DllImport("shell32.dll", EntryPoint = "Shell_NotifyIcon", CharSet = CharSet.Unicode, SetLastError = true)]
+    // FIX: Explicitly target the Wide (Unicode) API.
+    // LibraryImport does not automatically append 'W' like DllImport does.
+    // Calling "Shell_NotifyIcon" binds to "Shell_NotifyIconA" (ANSI), causing:
+    // 1. Tooltips truncated to 1 char (first byte of UTF-16 is char, second is null).
+    // 2. Events fail because the ANSI API rejects the large Unicode struct size during NIM_SETVERSION.
+    // Converted to LibraryImport (Blittable)
+    [LibraryImport("shell32.dll", EntryPoint = "Shell_NotifyIconW", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool NotifyIcon(uint dwMessage, ref NotifyIconData lpData);
+    public static partial bool NotifyIcon(uint dwMessage, ref NotifyIconData lpData);
 
     #endregion NotifyIcon Definitions
 
@@ -148,4 +216,57 @@ internal static partial class SystemPrimitives
     public static partial bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfo lpmi);
 
     #endregion User32 Definitions
+
+    #region GDI / Icon Manipulation
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct IconInfo
+    {
+        // TRUE (1) indicates an Icon, FALSE (0) indicates a Cursor
+        public int fIcon;
+        public uint xHotspot;
+        public uint yHotspot;
+        public IntPtr hbmMask;
+        public IntPtr hbmColor;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BitmapInfoHeader
+    {
+        public uint biSize;
+        public int biWidth;
+        public int biHeight;
+        public ushort biPlanes;
+        public ushort biBitCount;
+        public uint biCompression;
+        public uint biSizeImage;
+        public int biXPelsPerMeter;
+        public int biYPelsPerMeter;
+        public uint biClrUsed;
+        public uint biClrImportant;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BitmapInfo
+    {
+        public BitmapInfoHeader bmiHeader;
+        public uint bmiColors;
+    }
+
+    public const uint DibRgbColors = 0;
+
+    [LibraryImport("gdi32.dll", SetLastError = true)]
+    public static partial IntPtr CreateDIBSection(IntPtr hdc, ref BitmapInfo pbmi, uint usage, out IntPtr ppvBits, IntPtr hSection, uint dwOffset);
+
+    [LibraryImport("gdi32.dll", SetLastError = true)]
+    public static partial IntPtr CreateBitmap(int nWidth, int nHeight, uint cPlanes, uint cBitsPerPel, IntPtr lpvBits);
+
+    [LibraryImport("user32.dll", SetLastError = true)]
+    public static partial IntPtr CreateIconIndirect(ref IconInfo piconinfo);
+
+    [LibraryImport("gdi32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool DeleteObject(IntPtr hObject);
+
+    #endregion
 }
